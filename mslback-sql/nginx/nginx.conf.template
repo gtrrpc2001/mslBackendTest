@@ -1,0 +1,103 @@
+user nginx;
+worker_processes auto;
+
+events {
+    worker_connections 1024;  # 최대 동시 연결 수
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    sendfile        on;
+
+    keepalive_timeout  65;
+
+    # map $request_method $cors_preflight {
+       # default 0;  # 기본값은 0
+       # OPTIONS 1;  # OPTIONS 요청일 경우 1
+    # }
+
+    server {
+        listen  ${NGINX_PORT} ssl;
+        server_name  ${HOST};
+        charset utf-8;
+        
+        ssl_certificate ${DOCKER_CHAIN}; # SSL 인증서 경로
+        ssl_certificate_key ${DOCKER_KEY}; # SSL 키 경로              
+        ssl_protocols TLSv1.2 TLSv1.3;  # 최신 프로토콜 사용
+        ssl_ciphers 'HIGH:!aNULL:!MD5';
+
+        location /test/ {
+            # if ($cors_preflight) {
+            #    add_header 'Access-Control-Allow-Origin' '*';
+            #    add_header 'Access-Control-Allow-Methods' 'GET, POST, DELETE, PATCH, OPTIONS';
+            #    add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
+            #    add_header 'Access-Control-Max-Age' 3600;
+            #    return 204;
+            # }
+            # add_header 'Access-Control-Allow-Origin' '*';
+            # add_header 'Access-Control-Allow-Methods' 'GET, POST, DELETE, PATCH, OPTIONS';
+            # add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
+
+            # access_log /var/log/nginx/test_access.log;
+            # error_log /var/log/nginx/test_error.log;
+
+            # proxy_set_header X-Nginx-Proxy false;            
+            # proxy_ssl_session_reuse on;
+            # proxy_set_header X-Real-IP \$remote_addr;
+            # proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;                                    
+            # proxy_set_header Referer \$http_referer;
+            # proxy_set_header X-Forwarded-Proto \$scheme;
+            
+            rewrite ^/test(/.*)$ $1 break;
+            proxy_pass http://host.docker.internal:${DEFAULT}; # test 서비스에 요청 전달                    
+            proxy_http_version 1.1;
+
+            # websocket
+            # proxy_set_header Host $host;            
+            # proxy_set_header Upgrade $http_upgrade;
+            # proxy_set_header Connection "upgrade";
+            # proxy_cache_bypass $http_upgrade;
+        }
+
+        location / {
+            # if ($cors_preflight) {
+               # add_header 'Access-Control-Allow-Origin' '*';
+               # add_header 'Access-Control-Allow-Methods' 'GET, POST, DELETE, PATCH, OPTIONS';
+               # add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
+               # add_header 'Access-Control-Max-Age' 3600;             
+               # return 204;
+            # }
+
+            # add_header 'Access-Control-Allow-Origin' '*';
+            # add_header 'Access-Control-Allow-Methods' 'GET, POST, DELETE, PATCH, OPTIONS';
+            # add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
+
+            # access_log /var/log/nginx/deploy_access.log;
+            # error_log /var/log/nginx/deploy_error.log;
+
+            # proxy_set_header X-Nginx-Proxy false;
+            # proxy_ssl_session_reuse on;
+            # proxy_set_header X-Real-IP $remote_addr;
+            # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            # proxy_set_header Referer $http_referer;
+            # proxy_set_header X-Forwarded-Proto $scheme;
+
+            # rewrite ^/deploy(/.*)$ $1 break;
+            proxy_pass http://host.docker.internal:${BACKENDPORT}; # deploy 서비스에 요청 전달
+            proxy_http_version 1.1;
+            # proxy_set_header Connection 'upgrade';
+            # proxy_set_header Host $host;
+            # proxy_set_header Upgrade $http_upgrade;
+            # proxy_cache_bypass $http_upgrade;
+        }
+    }
+
+    #  server {
+    #     listen 4500; # HTTP 포트 설정
+    #     server_name ${HOST};
+
+    #     return 308 https://$host$request_uri; # 모든 HTTP 요청을 HTTPS로 리다이렉트
+    # }
+}

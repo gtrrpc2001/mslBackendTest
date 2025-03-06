@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Socket.IO 클라이언트 라이브러리 -->
+    <title>인증 완료</title>
+    <style>
+      #message.success {
+        color: green;
+        font-weight: bold;
+      }
+      #message.error {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
+    <script>
+      fetch('/mslSMS/emailSocketUrl')
+        .then((res) => res.json())
+        .then((config) => {
+          const url = config.socketUrl;
+          // 웹소켓 연결
+          const socket = io(url);
+          const urlParams = new URLSearchParams(window.location.search);
+          const token = urlParams.get('Token');
+          const email = urlParams.get('Email');
+          socket.emit('joinRoom', email);
+          // 인증 확인 요청 버튼 클릭 이벤트
+          socket.emit('checkEmailVerification', {
+            token: token,
+            roomId: email,
+          }); // 서버에 인증 요청
+
+          // 인증 완료 알림 수신
+          socket.on('emailVerified', (data) => {
+            const messageElement = document.getElementById('message');
+            messageElement.innerText = `인증이 성공적으로 완료되었습니다!`;
+            messageElement.className = 'success';
+            msg = data.message;
+
+            detectDevice(msg);
+          });
+
+          // 인증 오류 알림 수신
+          socket.on('emailVerificationError', (data) => {
+            const messageElement = document.getElementById('message');
+            messageElement.innerText = `인증 오류: ${data.message}`;
+            messageElement.className = 'error';
+            msg = data.message;
+
+            detectDevice(msg);
+          });
+        })
+        .catch((error) => {
+          console.error('이메일 인증에 실패했습니다. ', error);
+        });
+
+      function detectDevice(msg) {
+        const userAgent = navigator.userAgent;
+        console.log(msg);
+        if (/Mobi|Android|iPhone|iPad/i.test(userAgent)) {
+          fetch('/mslSMS/emailAppUrl')
+            .then((res) => res.json())
+            .then((config) => {
+              // 사용자 데이터를 URL에서 가져오기
+              const appUrl = config.appUrl;
+              window.location.href = `${appUrl}${encodeURIComponent(msg)}`;
+            })
+            .catch((error) => {
+              console.error('이메일 인증에 실패했습니다. ', error);
+            });
+        } else {
+          setTimeout(() => {
+            window.close(); // 페이지 닫기
+          }, 3000);
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <h1 id="message">인증 처리 중...</h1>
+  </body>
+</html>

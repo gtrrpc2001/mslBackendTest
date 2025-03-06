@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package arr;
+
+service SendArrService {
+  rpc SendEcgData (ecg_csv_ecgdataDTO) returns (ArrDataResponse);
+}
+
+message ecg_csv_ecgdataDTO {
+  string idx = 1;
+  string eq = 2;
+  string writetime = 3;
+  string timezone = 4;
+  string ecgPacket = 5;  
+}
+
+message ArrDataResponse {
+  string result = 1;
+}

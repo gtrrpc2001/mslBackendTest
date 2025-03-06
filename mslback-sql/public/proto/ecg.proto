@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ecg;
+
+service SendEcgService {
+  rpc SendEcgData (ecg_byteDTO) returns (EcgDataResponse);
+}
+
+message ecg_byteDTO {
+  string kind = 1;
+  string eq = 2;
+  string timezone = 3;
+  string writetime = 4;
+  repeated int32 ecgPacket = 5;
+  int32 bpm = 6;
+}
+
+message EcgDataResponse {
+  string result = 1;
+}

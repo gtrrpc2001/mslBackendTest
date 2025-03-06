@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-lookheart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-lookheart
+  template:
+    metadata:
+      labels:
+        app: deploy-lookheart
+    spec:
+      imagePullSecrets:
+        - name: myregistrykey
+      containers:
+        - name: deploy-lookheart
+          image: 471112749167.dkr.ecr.ap-northeast-2.amazonaws.com/msl-lookheart:v1
+          workingDir: /app
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: 'development'
+            - name: BACKENDPORT
+              value: '${BACKENDPORT}'
+            - name: DATABASE
+              value: '${DATABASE}'
+            - name: REDISDB
+              value: '${REDISDB}'
+            - name: MONGO
+              value: '${MONGO}'
+            - name: GOOGLECALLBACKURL
+              value: '${GOOGLECALLBACKURL}'
+            - name: GOOGLELOGINURL
+              value: '${GOOGLELOGINURL}'
+            - name: WEB_404URL
+              value: '${WEB_404URL}'
+            - name: EMAILURL
+              value: '${EMAILURL}'
+            - name: EMAILSOCKET_URL
+              value: '${EMAILSOCKET_URL}'
+            - name: CHECK_EMAIL
+              value: '${CHECK_EMAIL}'
+          volumeMounts:
+            - name: deploy-volumes
+              mountPath: /app
+            - name: deploy-node-modules
+              mountPath: /app/node_modules
+      volumes:
+        - name: deploy-volumes
+          persistentVolumeClaim:
+            claimName: deploy-volumes
+        - name: deploy-node-modules
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deploy-volumes
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

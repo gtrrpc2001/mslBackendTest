@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 완료</title>
+    <script>        
+        fetch('/google/appUrl')
+        .then(res => res.json())
+        .then(config => {
+
+            // 사용자 데이터를 URL에서 가져오기
+            const urlParams = new URLSearchParams(window.location.search);
+            const userData = urlParams.get('userData');
+            const appUrl = config.appUrl
+            // 사용자 데이터가 있다면 앱으로 리다이렉트
+            console.log(userData)
+            if (userData) {
+                // 앱 URL Scheme으로 리다이렉트
+                window.location.href = `${appUrl}${encodeURIComponent(userData)}`;
+            } else {
+                // 사용자 데이터가 없을 경우 처리
+                document.write('로그인에 실패했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('로그인에 실패했습니다. ', error)
+        })
+    </script>
+</head>
+<body>
+    <h1>로그인 처리 중...</h1>
+</body>
+</html>
